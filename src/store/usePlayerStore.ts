@@ -55,7 +55,7 @@ interface PlayerState {
   pause: () => Promise<void>;
   skipToNext: () => Promise<void>;
   skipToPrevious: () => Promise<void>;
-  
+
   setPlaying: (isPlaying: boolean) => void;
   setIsExpanded: (isExpanded: boolean) => void;
   updatePosition: (position: number, duration: number) => void;
@@ -74,92 +74,100 @@ export const usePlayerStore = create<PlayerState>()(
       queue: [],
       allTracks: [],
 
-      setPlaying: (isPlaying) => set({ isPlaying }),
-      setIsExpanded: (isExpanded) => set({ isExpanded }),
+      setPlaying: isPlaying => set({ isPlaying }),
+      setIsExpanded: isExpanded => set({ isExpanded }),
       updatePosition: (position, duration) => set({ position, duration }),
-
 
       getSecuredUrl: async (trackId: string): Promise<string> => {
         try {
-          const response = await api.get(`/auth/media-token`, { params: { mediaId: trackId } });
+          const response = await api.get(`/auth/media-token`, {
+            params: { mediaId: trackId },
+          });
           const mediaToken = response.data.token;
           const baseUrl = api.defaults.baseURL || '';
           return `${baseUrl}/music/stream/${trackId}?token=${mediaToken}`;
         } catch (error) {
-          console.error(`Nie udało się pobrać bezpiecznego tokenu dla utworu ${trackId}:`, error);
+          console.error(
+            `Nie udało się pobrać bezpiecznego tokenu dla utworu ${trackId}:`,
+            error,
+          );
           throw error;
         }
       },
 
       getCurrentTrackUrl: async (): Promise<string> => {
         const { currentTrack, getSecuredUrl } = get();
-          if (!currentTrack) return '';
-          try {
-
+        if (!currentTrack) return '';
+        try {
           return await getSecuredUrl(currentTrack.id);
-          } catch {
-            return '';
-          }
+        } catch {
+          return '';
+        }
       },
 
       setAllTracks: (tracks: Track[]) => {
-        TrackPlayer.clear()
+        TrackPlayer.clear();
         set({ allTracks: tracks });
-        TrackPlayer.setMediaItems(tracks.map(track => convertTrackToCleanMedia(track)))
+        TrackPlayer.setMediaItems(
+          tracks.map(track => convertTrackToCleanMedia(track)),
+        );
         set({ currentTrack: tracks[0] });
       },
 
-
       // CLICK ON A SONG FROM THE LIST -> DOWNLOAD ON THE FLY AND START
       playTrackFromLoadedQueue: async (trackId: string) => {
-  const { allTracks, getSecuredUrl } = get();
-  const trackIndex = allTracks.findIndex((t) => t.id === trackId);
-  if (trackIndex < 0) return;
- 
-  const track = allTracks[trackIndex];
- 
-  TrackPlayer.skipToIndex(trackIndex);
- 
-  try {
-    const signedUrl = await getSecuredUrl(track.id);
-    const updatedItem = convertTrackToCleanMedia(track);
-    updatedItem.url = signedUrl;
- 
-    // Without this, the native queue keeps whatever placeholder URL was set
-    // in setAllTracks, and playback would fail or use a stale token.
-    TrackPlayer.replaceMediaItem(trackIndex, updatedItem);
- 
-    set({ currentTrack: track, isPlaying: true });
-    TrackPlayer.play();
-  } catch (error) {
-    console.error(`Failed to start track ${trackId}:`, error);
-  }
-},
+        const { allTracks, getSecuredUrl } = get();
+        const trackIndex = allTracks.findIndex(t => t.id === trackId);
+        if (trackIndex < 0) return;
+
+        const track = allTracks[trackIndex];
+
+        TrackPlayer.skipToIndex(trackIndex);
+
+        try {
+          const signedUrl = await getSecuredUrl(track.id);
+          const updatedItem = convertTrackToCleanMedia(track);
+          updatedItem.url = signedUrl;
+
+          // Without this, the native queue keeps whatever placeholder URL was set
+          // in setAllTracks, and playback would fail or use a stale token.
+          TrackPlayer.replaceMediaItem(trackIndex, updatedItem);
+
+          set({ currentTrack: track, isPlaying: true });
+          TrackPlayer.play();
+        } catch (error) {
+          console.error(`Failed to start track ${trackId}:`, error);
+        }
+      },
 
       play: async () => {
         const { currentTrack, getSecuredUrl, allTracks } = get();
-        const activeTrack = TrackPlayer.getActiveMediaItem()
-        if (!currentTrack) return
-
-        if (activeTrack) {
-          TrackPlayer.play()
-        } else {
-          TrackPlayer.clear()
-          const currentTrackConverted = convertTrackToCleanMedia(currentTrack)
+        if (!currentTrack) return;
           
-          const otherTracksPromises = allTracks
-            .filter(track => track.id !== currentTrack.id)
-            .map(async track => {
-              const signedUrl = await getSecuredUrl(track.id)
+          const currentIndex = allTracks.findIndex(t => t.id === currentTrack.id);
+          if (currentIndex < 0) return;
 
-              return convertTrackToCleanMedia({...track, url: signedUrl})
-            })
+          try {
+            const signedUrl = await getSecuredUrl(currentTrack.id);
+            
+            const cleanMediaItems = allTracks.map((track, index) => {
+              const mediaItem = convertTrackToCleanMedia(track);
+              if (index === currentIndex) {
+                mediaItem.url = signedUrl;
+              }
+              return mediaItem;
+            });
+            TrackPlayer.setMediaItems(cleanMediaItems);
+            // jump to the appropriate index and run it
+            TrackPlayer.skipToIndex(currentIndex);
 
-          const otherTracks = await Promise.all(otherTracksPromises)
-
-          TrackPlayer.addMediaItems([currentTrackConverted, ...otherTracks])
-          TrackPlayer.play()
-        }
+            set({ isPlaying: true });
+            TrackPlayer.play();
+            
+          } catch (error) {
+            console.error(`Failed to start current track:`, error);
+          }
+        
       },
 
       pause: async () => {
@@ -185,7 +193,7 @@ export const usePlayerStore = create<PlayerState>()(
 
             TrackPlayer.replaceMediaItem(nextIndex, mediaItem);
             TrackPlayer.setMediaItems(TrackPlayer.getQueue(), nextIndex);
-            
+
             TrackPlayer.play();
             set({ isPlaying: true });
           } catch (error) {
@@ -212,7 +220,7 @@ export const usePlayerStore = create<PlayerState>()(
 
             TrackPlayer.replaceMediaItem(prevIndex, mediaItem);
             TrackPlayer.setMediaItems(TrackPlayer.getQueue(), prevIndex);
-            
+
             TrackPlayer.play();
             set({ isPlaying: true });
           } catch (error) {

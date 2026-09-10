@@ -22,7 +22,12 @@ const HeaderWithAvatarDrawer = () => {
           size={36}
           onPress={() => navigation.openDrawer()}
         />
-        <Text style={s.text}>SoundFix</Text>
+        <View style={[s.badge, { marginLeft: 20 }]}>
+          <Text style={s.text}>All</Text>
+        </View>
+        <View style={s.badge}>
+          <Text style={s.text}>Musics</Text>
+        </View>
         <View style={{ width: 32 }} />
       </View>
     </View>
@@ -38,15 +43,32 @@ const s = StyleSheet.create({
   content: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    justifyContent: 'flex-start',
     paddingVertical: 3,
     paddingHorizontal: 4,
+    marginLeft: 20
   },
   text: {
     color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
+    fontSize: 14,
+    fontWeight: 200,
   },
+  badge: {
+    borderStyle: 'solid',
+    borderWidth: 1,
+    borderRadius: 12,
+    borderColor: 'grey',
+    backgroundColor: 'green',
+    padding: 4,
+    width: 80,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginHorizontal: 8,
+    height: 34,
+    shadowColor: 'white',
+    
+  }
 });
 
 export default HeaderWithAvatarDrawer;

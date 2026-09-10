@@ -23,8 +23,13 @@ type Props = {
 export const MiniPlayer = ({ onTap, isPlaying, track }: Props) => {
   const { duration, position } = useProgress();
 
-  const progressPercent =
-    duration > 0 ? Math.min(position / duration, 1) * 100 : 0;
+  const calculateProgressWidth: any = () => {
+    if (duration > 0) {
+      const procentage = (position / duration) * 100;
+      return `${procentage}%`;
+    }
+    return '0%';
+  };
 
   const pan = Gesture.Pan().onEnd(event => {
     if (event.translationY < -50) {
@@ -41,7 +46,7 @@ export const MiniPlayer = ({ onTap, isPlaying, track }: Props) => {
   const backgroundColor = usePlayerColors(track?.coverUrl);
 
   if (!track) return null;
-console.log("Track in mini player : ", track)
+
   return (
     <View style={{ flex: 1, flexDirection: 'row' }}>
       <GestureDetector gesture={gesture}>
@@ -84,7 +89,7 @@ console.log("Track in mini player : ", track)
             <View style={styles.progressContainer}>
               <View style={styles.progressBackground}>
                 <View
-                  style={[styles.progressBar, { width: progressPercent }]}
+                  style={[styles.progressBar, { width: calculateProgressWidth() }]}
                 />
               </View>
             </View>
