@@ -61,7 +61,7 @@ export const RegisterScreen: React.FC<Props> = ({ navigation }) => {
             <TextInput
               value={name}
               onChangeText={setName}
-              placeholder="np. jan_kowalski"
+              placeholder="ex. Jone Doo"
               placeholderTextColor="#64748b"
               autoCapitalize="none"
               className="bg-slate-900 text-white px-4 py-3.5 rounded-xl border border-slate-800 focus:border-sky-500"
@@ -73,7 +73,7 @@ export const RegisterScreen: React.FC<Props> = ({ navigation }) => {
             <TextInput
               value={email}
               onChangeText={setEmail}
-              placeholder="jan@example.com"
+              placeholder="jone@example.com"
               placeholderTextColor="#64748b"
               keyboardType="email-address"
               autoCapitalize="none"
