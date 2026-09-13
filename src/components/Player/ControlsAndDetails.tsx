@@ -1,12 +1,10 @@
-import React, { useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
-import Slider from '@react-native-community/slider';
-import TrackPlayer from '@rntp/player';
 import { usePlayerStore, Track } from '../../store/usePlayerStore';
 import { MEDIA_URL } from '../../config/env';
 import { MovingText } from '../MovingText';
 import LinearGradient from 'react-native-linear-gradient';
+import { SeekBar } from './SeekBar';
 
 interface ControllsAndDetailsProps {
   track: Track;
@@ -14,6 +12,7 @@ interface ControllsAndDetailsProps {
   position: number;
   duration: number;
   colors: any;
+  cached: number;
 }
 
 /** Formats seconds as m:ss, e.g. 125 -> "2:05" */
@@ -33,6 +32,7 @@ export const ControllsAndDetails: React.FC<ControllsAndDetailsProps> = ({
   position,
   duration,
   colors,
+  cached
 }) => {
   const play = usePlayerStore(s => s.play);
   const pause = usePlayerStore(s => s.pause);
@@ -40,32 +40,11 @@ export const ControllsAndDetails: React.FC<ControllsAndDetailsProps> = ({
   const skipToPrevious = usePlayerStore(s => s.skipToPrevious);
   const updatePosition = usePlayerStore(s => s.updatePosition);
 
-  const [sliderValue, setSliderValue] = useState(position);
-  const [isSeeking, setIsSeeking] = useState(false);
-
-  useEffect(() => {
-    if (!isSeeking) {
-      setSliderValue(position);
-    }
-  }, [position, isSeeking]);
-
   const togglePlayback = () => {
     if (isPlaying) {
       pause();
     } else {
       play();
-    }
-  };
-
-  const handleSlidingStart = () => setIsSeeking(true);
-
-  const handleSlidingComplete = async (value: number) => {
-    setIsSeeking(false);
-    try {
-      TrackPlayer.seekTo(value);
-      updatePosition(value, duration);
-    } catch (error) {
-      console.error('Seek failed:', error);
     }
   };
 
@@ -84,25 +63,18 @@ export const ControllsAndDetails: React.FC<ControllsAndDetailsProps> = ({
           <Icon name="heart-outline" size={26} color="#fff" />
         </TouchableOpacity>
       </View>
-
-      <View style={styles.sliderWrapper}>
-        <Slider
-          style={styles.slider}
-          minimumValue={0}
-          maximumValue={Math.max(duration, 1)}
-          value={sliderValue}
-          minimumTrackTintColor="#fff"
-          maximumTrackTintColor="rgba(255,255,255,0.3)"
-          thumbTintColor="#fff"
-          onSlidingStart={handleSlidingStart}
-          onValueChange={setSliderValue}
-          onSlidingComplete={handleSlidingComplete}
-        />
-        <View style={styles.timeRow}>
-          <Text style={styles.timeText}>{formatTime(sliderValue)}</Text>
-          <Text style={styles.timeText}>{formatTime(duration)}</Text>
-        </View>
-      </View>
+      {/* Slider */}
+      <View className="mb-5">
+            <SeekBar position={position} duration={duration} cached={cached} />
+            <View className="flex-row justify-between mt-2">
+              <Text className="text-xs text-teal-300">
+                {formatTime(position)}
+              </Text>
+              <Text className="text-xs text-red-300">
+                {duration > 0 ? `-${formatTime(duration - position)}` : '--:--'}
+              </Text>
+            </View>
+          </View>
 
       <View style={styles.controlsRow}>
         <TouchableOpacity hitSlop={12}>
@@ -183,22 +155,7 @@ const styles = StyleSheet.create({
   likeButton: {
     padding: 4,
   },
-  sliderWrapper: {
-    marginTop: 24,
-  },
-  slider: {
-    width: '100%',
-    height: 32,
-  },
-  timeRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: -4,
-  },
-  timeText: {
-    color: 'rgba(255,255,255,0.6)',
-    fontSize: 12,
-  },
+
   controlsRow: {
     flexDirection: 'row',
     alignItems: 'center',
