@@ -12,6 +12,7 @@ const DotLoading = () => {
   useEffect(() => {
     startAnimation();
     return () => resetAnimation();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const startAnimation = () => {
