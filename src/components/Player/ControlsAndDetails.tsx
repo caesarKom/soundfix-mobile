@@ -64,9 +64,9 @@ export const ControllsAndDetails: React.FC<ControllsAndDetailsProps> = ({
         </TouchableOpacity>
       </View>
       {/* Slider */}
-      <View className="mb-5">
+      <View style={{ marginBottom: 2, marginTop: 20}}>
             <SeekBar position={position} duration={duration} cached={cached} />
-            <View className="flex-row justify-between mt-2">
+            <View className="flex-row justify-between mt-1">
               <Text className="text-xs text-teal-300">
                 {formatTime(position)}
               </Text>
@@ -178,6 +178,7 @@ const styles = StyleSheet.create({
     marginBottom: 48,
   },
   artistSection: {
+    backgroundColor: '#000',
     paddingBottom: 40,
   },
   sectionLabel: {

@@ -4,6 +4,6 @@
     "types": ["jest", "nativewind/types", "node", "ws"],
     "skipLibCheck": true
   },
-  "include": ["**/*.ts", "**/*.tsx", "nativewind-env.d.ts", "declarations.d.ts"],
+  "include": ["**/*.ts", "**/*.tsx", "nativewind-env.d.ts", "declarations.d.ts", "src/utils/playbackService.js"],
   "exclude": ["**/node_modules", "**/Pods"]
 }

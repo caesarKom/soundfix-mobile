@@ -33,7 +33,7 @@ export function SeekBar({
           />
         )}
         <View
-          style={{ width: `${progress * 100}%`, height: '100%', backgroundColor:'rgb(134, 239, 172, 0.4)' }}
+          style={{ width: `${progress * 100}%`, height: '100%', backgroundColor:'rgba(134, 239, 172, 0.4)' }}
         />
       </View>
       <View
