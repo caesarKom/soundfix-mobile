@@ -9,7 +9,7 @@ import HeaderWithAvatarDrawer from '../components/HeaderWithAvatarDrawer';
 
 
 export const HomeScreen = () => {
- const {currentTrack, playTrackFromLoadedQueue} = usePlayerStore()
+ const {currentTrack, playTrackById} = usePlayerStore()
 
   const { data: musicData, isLoading, isError, refetch, isRefetching } = useMusicQuery();
   const { data: playlistsData } = usePlaylistsQuery();
@@ -54,7 +54,7 @@ export const HomeScreen = () => {
                 key={track.id}
                 activeOpacity={0.8}
         
-                onPress={() => playTrackFromLoadedQueue(track.id)}
+                onPress={() => playTrackById(track.id)}
                 className="w-[48.5%] h-14 bg-neutral-900/80 rounded-md flex-row items-center mb-2 overflow-hidden border border-neutral-800/50"
               >
                 <Image
@@ -107,7 +107,7 @@ export const HomeScreen = () => {
               <TouchableOpacity
                 key={track.id}
            
-                onPress={() => playTrackFromLoadedQueue(track.id)}
+                onPress={() => playTrackById(track.id)}
                 className="mr-4 w-36"
                 activeOpacity={0.7}
               >

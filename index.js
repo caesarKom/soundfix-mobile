@@ -10,6 +10,5 @@ import { playbackSession } from './src/utils/playbackService'
 
 
 TrackPlayer.registerPlaybackSession(() => playbackSession());
-TrackPlayer.setupPlayer({ contentType: 'music'})
 
 AppRegistry.registerComponent(appName, () => App);

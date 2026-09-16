@@ -34,7 +34,7 @@ export const FullScreenPlayer = ({ onClose }: Props) => {
   const currentTrack = usePlayerStore(s => s.currentTrack);
   const getCurrentTrackUrl = usePlayerStore(s => s.getCurrentTrackUrl);
 
-  const { duration, position, cached } = useProgress();
+  const { duration, position, cached } = useProgress(0.5);
   const isPlaying = useIsPlaying();
 
   const imageUrl = `${MEDIA_URL}/${currentTrack?.coverUrl}` || noSongImg;
