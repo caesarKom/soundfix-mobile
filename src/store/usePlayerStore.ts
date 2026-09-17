@@ -103,6 +103,7 @@ export const usePlayerStore = create<PlayerState>()(
       },
 
       setAllTracks: async (tracks: Track[]) => {
+        if (!tracks || tracks.length === 0) return;
         TrackPlayer.clear();
         set({ allTracks: tracks });
         const mediaItems = tracks.map(track => convertTrackToCleanMedia(track));
@@ -117,11 +118,10 @@ export const usePlayerStore = create<PlayerState>()(
         }
 
         TrackPlayer.setMediaItems(mediaItems);
-        if (tracks.length > 0) {
           set({ currentTrack: tracks[0] });
           // Prefetch for the second song on the list
           await get().prepareNextTrackToken(0);
-        }
+        
       },
 
        playTrackById: async (trackId: string) => {
@@ -156,6 +156,12 @@ export const usePlayerStore = create<PlayerState>()(
           
         const currentIndex = allTracks.findIndex(t => t.id === currentTrack.id);
         if (currentIndex < 0) return;
+
+        const activeIndex = TrackPlayer.getActiveMediaItemIndex();
+        if (activeIndex === currentIndex) {
+          TrackPlayer.play()
+          return
+        }
 
         try {
           const signedUrl = await getSecuredUrl(currentTrack.id);
