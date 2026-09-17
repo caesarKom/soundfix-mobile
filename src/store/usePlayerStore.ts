@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import { mmkvStorage } from './storage';
-import TrackPlayer from '@rntp/player';
+import TrackPlayer, { MediaItem } from '@rntp/player';
 import { api } from '../services/api';
 
 export interface Track {
@@ -15,16 +15,10 @@ export interface Track {
   mimeType?: string;
 }
 
-interface MediaItem {
-  mediaId: string;
-  url: string;
-  title?: string;
-  artist?: string;
-  albumTitle?: string;
-  artworkUrl?: string;
-  duration?: number;
-  mimeType?: string;
-}
+const getBaseStreamUrl = (trackId: string): string => {
+  const baseUrl = api.defaults.baseURL;
+  return `${baseUrl}/music/stream/${trackId}`;
+};
 
 const convertTrackToCleanMedia = (track: Track): MediaItem => ({
   mediaId: track.id,
@@ -32,7 +26,7 @@ const convertTrackToCleanMedia = (track: Track): MediaItem => ({
   artist: track.artist,
   albumTitle: track.album,
   duration: track.duration,
-  url: track.url || 'file:///dev/null',
+  url: getBaseStreamUrl(track.id),
   artworkUrl: track.coverUrl,
   mimeType: track.mimeType,
 });
@@ -43,6 +37,7 @@ interface PlayerState {
 
   getSecuredUrl: (trackId: string) => Promise<string>;
   getCurrentTrackUrl: () => Promise<string>;
+  prepareNextTrackToken: (currentIndex: number) => Promise<void>;
 
   // Actions
   setAllTracks: (tracks: Track[]) => void;
@@ -89,77 +84,100 @@ export const usePlayerStore = create<PlayerState>()(
         }
       },
 
-      setAllTracks: (tracks: Track[]) => {
-        TrackPlayer.clear();
-        set({ allTracks: tracks });
-        TrackPlayer.setMediaItems(
-          tracks.map(track => convertTrackToCleanMedia(track)),
-        );
-        set({ currentTrack: tracks[0] });
+      prepareNextTrackToken: async (currentIndex: number) => {
+        const { allTracks, getSecuredUrl } = get();
+        const nextIndex = currentIndex + 1;
+        if (nextIndex < allTracks.length) {
+          try {
+            const nextTrack = allTracks[nextIndex];
+            const signedUrl = await getSecuredUrl(nextTrack.id);
+            const mediaItem = convertTrackToCleanMedia(nextTrack);
+            mediaItem.url = signedUrl;
+            
+            TrackPlayer.replaceMediaItem(nextIndex, mediaItem);
+            console.log(`[Player] Prefetched token for next track: ${nextTrack.title}`);
+          } catch (err) {
+            console.error('[Player] Failed to prefetch next track token', err);
+          }
+        }
       },
 
-      // CLICK ON A SONG FROM THE LIST -> DOWNLOAD ON THE FLY AND START
-      playTrackById: async (trackId: string) => {
-        const { allTracks, getSecuredUrl } = get();
+      setAllTracks: async (tracks: Track[]) => {
+        TrackPlayer.clear();
+        set({ allTracks: tracks });
+        const mediaItems = tracks.map(track => convertTrackToCleanMedia(track));
+        // Security: The first track receives a signed token immediately upon queue initialization
+        if (tracks.length > 0) {
+          try {
+            const firstTrackToken = await get().getSecuredUrl(tracks[0].id);
+            mediaItems[0].url = firstTrackToken;
+          } catch (e) {
+            console.error('[Player] Could not sign initial track token', e);
+          }
+        }
+
+        TrackPlayer.setMediaItems(mediaItems);
+        if (tracks.length > 0) {
+          set({ currentTrack: tracks[0] });
+          // Prefetch for the second song on the list
+          await get().prepareNextTrackToken(0);
+        }
+      },
+
+       playTrackById: async (trackId: string) => {
+        const { allTracks, getSecuredUrl, prepareNextTrackToken } = get();
         const trackIndex = allTracks.findIndex(t => t.id === trackId);
         if (trackIndex < 0) return;
 
         const track = allTracks[trackIndex];
-
-        TrackPlayer.skipToIndex(trackIndex);
 
         try {
           const signedUrl = await getSecuredUrl(track.id);
           const updatedItem = convertTrackToCleanMedia(track);
           updatedItem.url = signedUrl;
 
-          // Without this, the native queue keeps whatever placeholder URL was set
-          // in setAllTracks, and playback would fail or use a stale token.
+     
           TrackPlayer.replaceMediaItem(trackIndex, updatedItem);
-
+          TrackPlayer.skipToIndex(trackIndex);
+          
           set({ currentTrack: track });
           TrackPlayer.play();
+
+    
+          await prepareNextTrackToken(trackIndex);
         } catch (error) {
           console.error(`Failed to start track ${trackId}:`, error);
         }
       },
 
-      play: async () => {
-        const { currentTrack, getSecuredUrl, allTracks } = get();
+       play: async () => {
+        const { currentTrack, getSecuredUrl, allTracks, prepareNextTrackToken } = get();
         if (!currentTrack) return;
           
-          const currentIndex = allTracks.findIndex(t => t.id === currentTrack.id);
-          if (currentIndex < 0) return;
+        const currentIndex = allTracks.findIndex(t => t.id === currentTrack.id);
+        if (currentIndex < 0) return;
 
-          try {
-            const signedUrl = await getSecuredUrl(currentTrack.id);
-            
-            const cleanMediaItems = allTracks.map((track, index) => {
-              const mediaItem = convertTrackToCleanMedia(track);
-              if (index === currentIndex) {
-                mediaItem.url = signedUrl;
-              }
-              return mediaItem;
-            });
-            TrackPlayer.setMediaItems(cleanMediaItems);
-            // jump to the appropriate index and run it
-            TrackPlayer.skipToIndex(currentIndex);
+        try {
+          const signedUrl = await getSecuredUrl(currentTrack.id);
+          const mediaItem = convertTrackToCleanMedia(currentTrack);
+          mediaItem.url = signedUrl;
 
-            TrackPlayer.play();
-            
-          } catch (error) {
-            console.error(`Failed to start current track:`, error);
-          }
-        
+          TrackPlayer.replaceMediaItem(currentIndex, mediaItem);
+          TrackPlayer.skipToIndex(currentIndex);
+          TrackPlayer.play();
+
+          await prepareNextTrackToken(currentIndex);
+        } catch (error) {
+          console.error(`Failed to start current track:`, error);
+        }
       },
 
       pause: async () => {
         TrackPlayer.pause();
       },
 
-      // (NEXT TRACK)
-      skipToNext: async () => {
-        const { allTracks, getSecuredUrl } = get();
+     skipToNext: async () => {
+        const { allTracks, getSecuredUrl, prepareNextTrackToken } = get();
         const currentIndex = TrackPlayer.getActiveMediaItemIndex();
 
         if (currentIndex !== null && currentIndex < allTracks.length - 1) {
@@ -174,18 +192,19 @@ export const usePlayerStore = create<PlayerState>()(
             set({ currentTrack: nextTrack });
 
             TrackPlayer.replaceMediaItem(nextIndex, mediaItem);
-            TrackPlayer.setMediaItems(TrackPlayer.getQueue(), nextIndex);
-
+            TrackPlayer.skipToIndex(nextIndex);
             TrackPlayer.play();
+
+    
+            await prepareNextTrackToken(nextIndex);
           } catch (error) {
-            console.error('Błąd przejścia do następnego utworu:', error);
+            console.error('Error shifting to next track:', error);
           }
         }
       },
 
-      // (PREVIOUS TRACK)
       skipToPrevious: async () => {
-        const { allTracks, getSecuredUrl } = get();
+        const { allTracks, getSecuredUrl, prepareNextTrackToken } = get();
         const currentIndex = TrackPlayer.getActiveMediaItemIndex();
 
         if (currentIndex !== null && currentIndex > 0) {
@@ -200,21 +219,41 @@ export const usePlayerStore = create<PlayerState>()(
             set({ currentTrack: prevTrack });
 
             TrackPlayer.replaceMediaItem(prevIndex, mediaItem);
-            TrackPlayer.setMediaItems(TrackPlayer.getQueue(), prevIndex);
-
+            TrackPlayer.skipToIndex(prevIndex);
             TrackPlayer.play();
 
+            await prepareNextTrackToken(prevIndex);
           } catch (error) {
-            console.error(error);
+            console.error('Error shifting to previous track:', error);
           }
         }
       },
 
-      syncCurrentTrackWithNative: () => {
+      syncCurrentTrackWithNative: async () => {
         const activeIndex = TrackPlayer.getActiveMediaItemIndex();
-        const { allTracks } = get();
+        const { allTracks, getSecuredUrl, prepareNextTrackToken } = get();
         if (activeIndex !== null && allTracks[activeIndex]) {
-          set({ currentTrack: allTracks[activeIndex] });
+          const nextTrack = allTracks[activeIndex];
+          set({ currentTrack: nextTrack });
+          
+          // Fuse: If the system jumped itself and the track does not yet have a token assigned in the URL
+          const nativeQueue = TrackPlayer.getQueue();
+          const activeNativeItem = nativeQueue[activeIndex];
+          const currentUrl = activeNativeItem && typeof activeNativeItem.url === 'string' ? activeNativeItem.url : '';
+          
+          if (!currentUrl || !currentUrl.includes('token=')) {
+            try {
+              const signedUrl = await getSecuredUrl(nextTrack.id);
+              const mediaItem = convertTrackToCleanMedia(nextTrack);
+              mediaItem.url = signedUrl;
+              TrackPlayer.replaceMediaItem(activeIndex, mediaItem);
+            } catch (e) {
+              console.error('[Player Sync] Dynamic emergency sign failed', e);
+            }
+          }
+          
+          // Preparing a token for the next song (X+1)
+          await prepareNextTrackToken(activeIndex);
         }
       },
 
