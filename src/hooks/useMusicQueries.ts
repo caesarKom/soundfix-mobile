@@ -1,29 +1,30 @@
-import { useQuery } from '@tanstack/react-query';
+import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { api } from '../services/api';
 import { useEffect } from 'react';
 import { usePlayerStore, Track } from '../store/usePlayerStore';
 
 
-export const useMusicQuery = () => {
-  const setAllTracks = usePlayerStore((s) => s.setAllTracks);
+export const useInfiniteMusicQuery = () => {
 
-  const query = useQuery<Track[]>({
-    queryKey: ['music'],
-    queryFn: async () => {
-      const res = await api.get('/music');
+  return useInfiniteQuery<Track[]>({
+    queryKey: ['music', 'infinite'],
+    queryFn: async ({ pageParam = 1 }) => {
+      const res = await api.get('/music', {
+        params: {
+          page: pageParam,
+          limit: 20
+        },
+      });
       return Array.isArray(res.data) ? res.data : (res.data?.data || []);
     },
-    staleTime: 1000 * 60 * 5, // Data is "fresh" for 5 minutes
+    initialPageParam : 1,
+    getNextPageParam: (lastPage, allPages) => {
+      if (lastPage.length < 20) return undefined;
+      return allPages.length + 1;
+    },
+    staleTime: 1000 * 60 * 5,
   });
-
-  // Automatically sync with Zustand store when new data arrives
-  useEffect(() => {
-    if (Array.isArray(query.data) && query.data.length > 0) {
-      setAllTracks(query.data);
-    }
-  }, [query.data, setAllTracks]);
-
-  return query;
+  
 };
 
 export const usePlaylistsQuery = () => {

@@ -41,6 +41,7 @@ interface PlayerState {
 
   // Actions
   setAllTracks: (tracks: Track[]) => void;
+  appendTracks: (newTracks: Track[]) => Promise<void>;
   playTrackById: (trackId: string) => Promise<void>;
   play: () => Promise<void>;
   pause: () => Promise<void>;
@@ -104,17 +105,16 @@ export const usePlayerStore = create<PlayerState>()(
 
       setAllTracks: async (tracks: Track[]) => {
         if (!tracks || tracks.length === 0) return;
-        TrackPlayer.clear();
         set({ allTracks: tracks });
+        TrackPlayer.clear();
+        
         const mediaItems = tracks.map(track => convertTrackToCleanMedia(track));
-        // Security: The first track receives a signed token immediately upon queue initialization
-        if (tracks.length > 0) {
-          try {
-            const firstTrackToken = await get().getSecuredUrl(tracks[0].id);
-            mediaItems[0].url = firstTrackToken;
-          } catch (e) {
-            console.error('[Player] Could not sign initial track token', e);
-          }
+        
+        try {
+          const firstTrackToken = await get().getSecuredUrl(tracks[0].id);
+          mediaItems[0].url = firstTrackToken;
+        } catch (e) {
+          console.error('[Player] Could not sign initial track token', e);
         }
 
         TrackPlayer.setMediaItems(mediaItems);
@@ -122,6 +122,26 @@ export const usePlayerStore = create<PlayerState>()(
           // Prefetch for the second song on the list
           await get().prepareNextTrackToken(0);
         
+      },
+
+      appendTracks: async (newTracks: Track[]) => {
+        const { allTracks } = get();
+        
+        // Filtrujemy utwory, aby upewnić się, że nie dodajemy duplikatów do stanu
+        const uniqueNewTracks = newTracks.filter(
+          nt => !allTracks.some(at => at.id === nt.id)
+        );
+        
+        if (uniqueNewTracks.length === 0) return;
+
+        // Łączymy tablice w Zustandzie
+        const updatedTracks = [...allTracks, ...uniqueNewTracks];
+        set({ allTracks: updatedTracks });
+
+        // Konwertujemy i bez czyszczenia kolejki (bez .clear()) dołączamy na koniec natywnego playera
+        const newMediaItems = uniqueNewTracks.map(track => convertTrackToCleanMedia(track));
+        TrackPlayer.addMediaItems(newMediaItems);
+        console.log(`[Player] Dynamically appended ${uniqueNewTracks.length} tracks to native queue.`);
       },
 
        playTrackById: async (trackId: string) => {
