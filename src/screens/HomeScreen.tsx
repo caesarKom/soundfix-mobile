@@ -7,6 +7,7 @@ import { noSongImg } from '../utils/images';
 import { usePlaylistsQuery, useInfiniteMusicQuery } from '../hooks/useMusicQueries';
 import HeaderWithAvatarDrawer from '../components/HeaderWithAvatarDrawer';
 import { useEffect, useMemo } from 'react';
+import { navigate } from '../navigation/NavigationUtils';
 
 export const HomeScreen = () => {
  const {currentTrack, playTrackById, setAllTracks, appendTracks} = usePlayerStore()
@@ -56,7 +57,6 @@ export const HomeScreen = () => {
     );
   }
 
-   // Komponent renderujący pojedynczy kafelek utworu (zoptymalizowany pod FlatList)
   const renderTrackItem = ({ item }: { item: Track }) => {
     const isSelected = currentTrack?.id === item.id;
     return (
@@ -83,8 +83,8 @@ export const HomeScreen = () => {
     );
   };
 
-  // Sekcje dodatkowe przeniesione na dół siatki, aby zachować jeden spójny kontekst przewijania
-  const ListFooter =  (
+  // Additional sections moved to the bottom of the grid to maintain one consistent scrolling context
+  const ListHeader =  (
     <View className="mt-4">
       
       {isFetchingNextPage && (
@@ -102,7 +102,7 @@ export const HomeScreen = () => {
             data={playlistsData}
             keyExtractor={(item) => item.id}
             renderItem={({ item: playlist }) => (
-              <TouchableOpacity className="mr-4 w-36" activeOpacity={0.7}>
+              <TouchableOpacity className="mr-4 w-36" activeOpacity={0.7} onPress={() => navigate('Playlist',{playlistId: playlist.id})}>
                 <Image
                   source={{
                     uri: playlist.coverUrl ? `${MEDIA_URL}/${playlist.coverUrl}` : noSongImg,
@@ -160,6 +160,10 @@ export const HomeScreen = () => {
           )}
         />
       </View>
+
+       <View className="mb-6 mt-4 flex items-center justify-center">
+          <Text className="text-white text-xl font-bold mb-3">All Musics</Text>
+          </View>
     </View>
   );
 
@@ -174,7 +178,7 @@ export const HomeScreen = () => {
         numColumns={2}
         columnWrapperStyle={{ justifyContent: 'space-between' }}
         contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 12, paddingBottom: 100 }}
-        ListFooterComponent={ListFooter}
+        ListHeaderComponent={ListHeader}
         refreshing={isRefetching}
         onRefresh={refetch}
         // Triggering data reloading when the user scrolls the list to 80% of its height

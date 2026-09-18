@@ -11,9 +11,10 @@ import { ProfileScreen } from '../screens/auth/ProfileScreen';
 import { CustomDrawerContent } from './CustomDrawerContent';
 import { SplashScreen } from '../screens/SplashScreen';
 import { navigationRef } from './NavigationUtils';
-import { Text, View } from 'react-native';
+import { View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { GlobalPlayer } from '../components/Player/GlobalPlayer';
+import { PlaylistScreen } from '../screens/PlaylistScreen';
 
 
 const Stack = createNativeStackNavigator();
@@ -55,7 +56,10 @@ const MainStack = () => {
       initialRouteName="App"
       >
         {accessToken ? (
+          <>
           <Stack.Screen name="App" component={AppDrawerNavigator} />
+          <Stack.Screen name="Playlist" component={PlaylistScreen} />
+          </>
         ) : (
           <Stack.Screen name="Auth" component={AuthNavigator} />
         )}
@@ -78,7 +82,7 @@ const RootNavigator = () => {
     return route.name;
   }
 
-   const screensWithPlayer = ['HomeTab', 'SearchTab', 'LibraryTab']
+   const screensWithPlayer = ['HomeTab', 'SearchTab', 'LibraryTab', 'Playlist']
    const shouldShowPlayer = screensWithPlayer.includes(currentRoute);
 
   useEffect(() => {
