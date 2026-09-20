@@ -3,7 +3,7 @@ import { View, Text, TouchableOpacity, Image, ActivityIndicator, FlatList } from
 import Icon from 'react-native-vector-icons/Ionicons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MEDIA_URL } from '../config/env';
-import { Track, usePlayerStore } from '../store/usePlayerStore';
+import { usePlayerStore } from '../store/usePlayerStore';
 import { noSongImg } from '../utils/images';
 import { 
   usePlaylistMetadataQuery, 
@@ -11,6 +11,7 @@ import {
   useToggleFavoriteMutation 
 } from '../hooks/useMusicQueries';
 import { goBack } from '../navigation/NavigationUtils';
+import { RenderTrackItem } from '../components/RenderTrackItem';
 
 
 export const PlaylistScreen = ({route}: any ) => {
@@ -88,48 +89,6 @@ export const PlaylistScreen = ({route}: any ) => {
     </View>
   );
 
-  const renderTrackRow = ({ item, index }: { item: Track; index: number }) => {
-    const isSelected = currentTrack?.id === item.id;
-    return (
-      <View className="flex-row items-center justify-between px-4 py-2 mb-1 bg-neutral-900/40 rounded-lg border border-neutral-900">
-        <TouchableOpacity
-          activeOpacity={0.7}
-          onPress={() => playTrackById(item.id)}
-          className="flex-row items-center flex-1 mr-4"
-        >
-          <Text className="text-neutral-500 w-6 font-semibold text-center">{index + 1}</Text>
-          <Image
-            source={{ uri: item.coverUrl ? `${MEDIA_URL}/${item.coverUrl}` : noSongImg }}
-            className="w-10 h-10 rounded-md bg-neutral-800 mr-3"
-          />
-          <View className="flex-1">
-            <Text
-              className={`text-sm font-medium ${isSelected ? 'text-emerald-500' : 'text-white'}`}
-              numberOfLines={1}
-            >
-              {item.title}
-            </Text>
-            <Text className="text-neutral-400 text-xs" numberOfLines={1}>
-              {item.artist}
-            </Text>
-          </View>
-        </TouchableOpacity>
-
-        {/* Favorites button (Heart) */}
-        <TouchableOpacity 
-          onPress={() => toggleFavorite(item.id)}
-          className="p-2"
-          activeOpacity={0.6}
-        >
-          <Icon 
-            name="heart" 
-            size={22} 
-            color="#1DB954" // Ultimately, you can check the isFavorite field from the backend here
-          />
-        </TouchableOpacity>
-      </View>
-    );
-  };
 
   return (
     <SafeAreaView className="flex-1 bg-neutral-950">
@@ -143,7 +102,7 @@ export const PlaylistScreen = ({route}: any ) => {
 
       <FlatList
         data={playlistTracks}
-        renderItem={renderTrackRow}
+        renderItem={({ item }) => <RenderTrackItem item={item} playTrackById={playTrackById} toggleFavorite={toggleFavorite} currentTrack={currentTrack} />}
         keyExtractor={(item) => `playlist-track-${item.id}`}
         contentContainerStyle={{ paddingBottom: 150 }}
         ListHeaderComponent={ListHeader}
