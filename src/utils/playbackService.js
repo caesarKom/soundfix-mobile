@@ -5,7 +5,7 @@ export const playbackSession = () => {
 
   TrackPlayer.addEventListener(Event.MediaItemTransition, ({ item }) => {
     if (!item) return;
-    console.log('[V5 Session] Transition detected to item:', item.mediaId);
+    //console.log('[V5 Session] Transition detected to item:', item.mediaId);
     usePlayerStore.getState().syncCurrentTrackWithNative();
   });
 

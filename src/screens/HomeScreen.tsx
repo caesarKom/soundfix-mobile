@@ -2,15 +2,16 @@ import { View, Text, TouchableOpacity, Image, ActivityIndicator, FlatList } from
 import Icon from 'react-native-vector-icons/Ionicons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MEDIA_URL } from '../config/env';
-import { Track, usePlayerStore } from '../store/usePlayerStore';
+import { usePlayerStore } from '../store/usePlayerStore';
 import { noSongImg } from '../utils/images';
-import { usePlaylistsQuery, useInfiniteMusicQuery } from '../hooks/useMusicQueries';
+import { usePlaylistsQuery, useInfiniteMusicQuery, useToggleFavoriteMutation } from '../hooks/useMusicQueries';
 import HeaderWithAvatarDrawer from '../components/HeaderWithAvatarDrawer';
 import { useEffect, useMemo } from 'react';
 import { navigate } from '../navigation/NavigationUtils';
+import { RenderTrackItem } from '../components/RenderTrackItem';
 
 export const HomeScreen = () => {
- const {currentTrack, playTrackById, setAllTracks, appendTracks} = usePlayerStore()
+ const { playTrackById, setAllTracks, appendTracks, currentTrack } = usePlayerStore()
 
   const { data, isLoading, isError, refetch, isRefetching, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteMusicQuery()
   const { data: playlistsData } = usePlaylistsQuery();
@@ -35,9 +36,9 @@ export const HomeScreen = () => {
     }
   }, [data, setAllTracks, appendTracks]);
 
-  console.log("HOME DATA : ", allTracks.length)
+  const { mutate: toggleFavorite } = useToggleFavoriteMutation() 
 
-  if (isLoading) {
+  if (isLoading && allTracks.length === 0) {
     return (
       <SafeAreaView className="flex-1 bg-neutral-950 items-center justify-center">
         <ActivityIndicator size="large" color="#1DB954" />
@@ -57,33 +58,6 @@ export const HomeScreen = () => {
     );
   }
 
-  const renderTrackItem = ({ item }: { item: Track }) => {
-    const isSelected = currentTrack?.id === item.id;
-    return (
-      <TouchableOpacity
-        key={item.id}
-        activeOpacity={0.8}
-        onPress={() => playTrackById(item.id)}
-        className="w-[49%] h-14 bg-neutral-900/80 rounded-md flex-row items-center mb-2 overflow-hidden border border-neutral-800/50"
-      >
-        <Image
-          source={{
-            uri: item.coverUrl ? `${MEDIA_URL}/${item.coverUrl}` : noSongImg,
-          }}
-          className="w-14 h-14"
-          resizeMode="cover"
-        />
-        <Text
-          className={`flex-1 text-xs font-semibold px-2 ${isSelected ? 'text-emerald-500' : 'text-white'}`}
-          numberOfLines={2}
-        >
-          {item.title}
-        </Text>
-      </TouchableOpacity>
-    );
-  };
-
-  // Additional sections moved to the bottom of the grid to maintain one consistent scrolling context
   const ListHeader =  (
     <View className="mt-4">
       
@@ -173,10 +147,9 @@ export const HomeScreen = () => {
       
       <FlatList
         data={Array.isArray(allTracks) ? allTracks : []}
-        renderItem={renderTrackItem}
+        renderItem={({item}) => <RenderTrackItem item={item} playTrackById={playTrackById} currentTrack={currentTrack} toggleFavorite={toggleFavorite} />}
         keyExtractor={(item) => item.id}
-        numColumns={2}
-        columnWrapperStyle={{ justifyContent: 'space-between' }}
+
         contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 12, paddingBottom: 100 }}
         ListHeaderComponent={ListHeader}
         refreshing={isRefetching}

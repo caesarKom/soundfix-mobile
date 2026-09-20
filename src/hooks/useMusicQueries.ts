@@ -18,7 +18,7 @@ export const useInfinitePlaylistSongsQuery = (playlistId: string) => {
   return useInfiniteQuery<Track[], Error, InfiniteData<Track[], number>, [string, string, string], number>({
     queryKey: ['playlist', 'songs', playlistId],
     queryFn: async ({ pageParam }) => {
-      const res = await api.get(`/playlists/${playlistId}/song`, {
+      const res = await api.get(`/playlists/${playlistId}/songs`, {
         params: { page: pageParam, limit: 20 },
       });
       console.log("Query songs data : ", res.data)
@@ -39,10 +39,10 @@ export const useToggleFavoriteMutation = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (musicId: string) => {
-      const res = await api.post(`/playlists/favorites/toggle/${musicId}`);
+      const res = await api.post(`/music/like/${musicId}`);
       return res.data; // return { isFavorite: boolean }
     },
-    onSuccess: (_, musicId) => {
+    onSuccess: () => {
       // Cache invalidation to refresh heart states on screens
       queryClient.invalidateQueries({ queryKey: ['music'] });
       queryClient.invalidateQueries({ queryKey: ['playlist'] });

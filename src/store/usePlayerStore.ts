@@ -13,6 +13,7 @@ export interface Track {
   url: string;
   coverUrl?: string;
   mimeType?: string;
+  isLiked?: boolean;
 }
 
 const getBaseStreamUrl = (trackId: string): string => {
@@ -96,7 +97,7 @@ export const usePlayerStore = create<PlayerState>()(
             mediaItem.url = signedUrl;
             
             TrackPlayer.replaceMediaItem(nextIndex, mediaItem);
-            console.log(`[Player] Prefetched token for next track: ${nextTrack.title}`);
+            //console.log(`[Player] Prefetched token for next track: ${nextTrack.title}`);
           } catch (err) {
             console.error('[Player] Failed to prefetch next track token', err);
           }
@@ -127,18 +128,18 @@ export const usePlayerStore = create<PlayerState>()(
       appendTracks: async (newTracks: Track[]) => {
         const { allTracks } = get();
         
-        // Filtrujemy utwory, aby upewnić się, że nie dodajemy duplikatów do stanu
+        // Filter songs to make sure we don't add duplicates to the state
         const uniqueNewTracks = newTracks.filter(
           nt => !allTracks.some(at => at.id === nt.id)
         );
         
         if (uniqueNewTracks.length === 0) return;
 
-        // Łączymy tablice w Zustandzie
+        // Connect boards in Zustand
         const updatedTracks = [...allTracks, ...uniqueNewTracks];
         set({ allTracks: updatedTracks });
 
-        // Konwertujemy i bez czyszczenia kolejki (bez .clear()) dołączamy na koniec natywnego playera
+        // Convert and without clearing the queue (without .clear()) append to the end of the native player
         const newMediaItems = uniqueNewTracks.map(track => convertTrackToCleanMedia(track));
         TrackPlayer.addMediaItems(newMediaItems);
         console.log(`[Player] Dynamically appended ${uniqueNewTracks.length} tracks to native queue.`);
