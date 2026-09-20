@@ -15,6 +15,7 @@ import { View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { GlobalPlayer } from '../components/Player/GlobalPlayer';
 import { PlaylistScreen } from '../screens/PlaylistScreen';
+import FavoriteScreen from '../screens/FavoriteScreen';
 
 
 const Stack = createNativeStackNavigator();
@@ -59,6 +60,11 @@ const MainStack = () => {
           <>
           <Stack.Screen name="App" component={AppDrawerNavigator} />
           <Stack.Screen name="Playlist" component={PlaylistScreen} />
+
+          <Stack.Group screenOptions={{ presentation: 'modal', gestureEnabled: true }}>
+            <Stack.Screen name="Favorite" component={FavoriteScreen} />
+          </Stack.Group>
+
           </>
         ) : (
           <Stack.Screen name="Auth" component={AuthNavigator} />

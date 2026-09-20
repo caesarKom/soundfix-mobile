@@ -3,12 +3,13 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MEDIA_URL } from '../config/env';
 import { usePlayerStore } from '../store/usePlayerStore';
-import { noSongImg } from '../utils/images';
+import { Heart, noSongImg } from '../utils/images';
 import { usePlaylistsQuery, useInfiniteMusicQuery, useToggleFavoriteMutation } from '../hooks/useMusicQueries';
 import HeaderWithAvatarDrawer from '../components/HeaderWithAvatarDrawer';
 import { useEffect, useMemo } from 'react';
 import { navigate } from '../navigation/NavigationUtils';
 import { RenderTrackItem } from '../components/RenderTrackItem';
+import DotLoading from '../components/DotLoading';
 
 export const HomeScreen = () => {
  const { playTrackById, setAllTracks, appendTracks, currentTrack } = usePlayerStore()
@@ -60,12 +61,20 @@ export const HomeScreen = () => {
 
   const ListHeader =  (
     <View className="mt-4">
+      <TouchableOpacity className="mr-4 w-36" activeOpacity={0.7} onPress={() => navigate('Favorite')}>
+                <Image
+                  source={{ uri: Heart }}
+                  className="w-36 h-36 rounded-md mb-2 bg-neutral-900"
+                  resizeMode="cover"
+                />
+                <Text className="text-white font-semibold text-sm" numberOfLines={1}>
+                  Favorite
+                </Text>
+                <Text className="text-neutral-400 text-xs" numberOfLines={1}>
+                  Your favorite playlist
+                </Text>
+              </TouchableOpacity>
       
-      {isFetchingNextPage && (
-        <View className="py-4 justify-center items-center">
-          <ActivityIndicator size="small" color="#1DB954" />
-        </View>
-      )}
       {/* Featured Playlists */}
       {Array.isArray(playlistsData) && playlistsData.length > 0 && (
         <View className="mb-6">
@@ -152,6 +161,13 @@ export const HomeScreen = () => {
 
         contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 12, paddingBottom: 100 }}
         ListHeaderComponent={ListHeader}
+        ListFooterComponent={
+          isFetchingNextPage ? (
+        <View className="py-4 justify-center items-center">
+          <DotLoading />
+        </View>
+      ) : undefined
+        }
         refreshing={isRefetching}
         onRefresh={refetch}
         // Triggering data reloading when the user scrolls the list to 80% of its height
@@ -160,7 +176,7 @@ export const HomeScreen = () => {
             fetchNextPage();
           }
         }}
-        onEndReachedThreshold={0.2}
+        onEndReachedThreshold={0.3}
         // Optimization parameters for large data sets (100+ tracks):
         initialNumToRender={10}
         maxToRenderPerBatch={10}

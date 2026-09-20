@@ -84,3 +84,14 @@ export const usePlaylistsQuery = () => {
     staleTime: 1000 * 60 * 5,
   });
 };
+
+export const useFavoritesMusicsQuery = () => {
+  return useQuery({
+    queryKey: ['favorites'],
+    queryFn: async () => {
+      const res = await api.get('/music/liked');
+      return Array.isArray(res.data) ? res.data : (res.data?.data || []);
+    },
+    staleTime: 1000 * 60 * 5,
+  });
+};
