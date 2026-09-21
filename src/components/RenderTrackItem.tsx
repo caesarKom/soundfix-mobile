@@ -15,7 +15,7 @@ export const RenderTrackItem = ({ item, currentTrack, playTrackById, toggleFavor
     const isSelected = currentTrack?.id === item.id;
     const isHeartActive = !!item.isLiked;
     return (
-       <View className="flex-row items-center justify-between px-4 py-2 mb-1 bg-neutral-900/10 rounded-lg border border-neutral-800/20">
+       <View className="flex-row items-center justify-between px-4 py-2 mb-1 bg-neutral-700/10 rounded-lg border border-neutral-600/20">
       <TouchableOpacity
         key={item.id}
         activeOpacity={0.8}

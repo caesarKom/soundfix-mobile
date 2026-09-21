@@ -1,5 +1,5 @@
 import { View, Text, TouchableOpacity, Image, FlatList } from 'react-native';
-import React from 'react';
+import React, { useEffect } from 'react';
 import Icon from '../components/Icon';
 import { goBack } from '../navigation/NavigationUtils';
 import {
@@ -22,6 +22,12 @@ const FavoriteScreen = () => {
   } = useFavoritesMusicsQuery();
   const { mutate: toggleFavorite } = useToggleFavoriteMutation();
   const { setAllTracks, currentTrack, playTrackById } = usePlayerStore();
+
+  useEffect(() => {
+    if (!isDataMusicLoading) {
+        setAllTracks(favoriteMusics)
+    }
+  }, [setAllTracks, isDataMusicLoading, favoriteMusics])
 
   if (isDataMusicLoading) {
     return (

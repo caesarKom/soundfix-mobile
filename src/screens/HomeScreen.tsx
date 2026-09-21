@@ -61,6 +61,7 @@ export const HomeScreen = () => {
 
   const ListHeader =  (
     <View className="mt-4">
+      <Text className="text-white text-xl font-bold mb-3">For You</Text>
       <TouchableOpacity className="mr-4 w-36" activeOpacity={0.7} onPress={() => navigate('Favorite')}>
                 <Image
                   source={{ uri: Heart }}
@@ -77,7 +78,7 @@ export const HomeScreen = () => {
       
       {/* Featured Playlists */}
       {Array.isArray(playlistsData) && playlistsData.length > 0 && (
-        <View className="mb-6">
+        <View className="mb-6 mt-6">
           <Text className="text-white text-xl font-bold mb-3">Featured Playlists</Text>
           <FlatList
             horizontal
@@ -151,7 +152,7 @@ export const HomeScreen = () => {
   );
 
   return (
-    <SafeAreaView className="flex-1 bg-neutral-950">
+    <SafeAreaView className="flex-1 bg-neutral-900">
       <HeaderWithAvatarDrawer />
       
       <FlatList
