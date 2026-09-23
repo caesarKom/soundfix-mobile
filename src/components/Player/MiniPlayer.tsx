@@ -161,6 +161,6 @@ const styles = StyleSheet.create({
     transform: [{ translateY: -15 }],
     justifyContent: 'center',
     alignItems: 'center',
-    zIndex: 1000,
+    zIndex: 1,
   },
 });

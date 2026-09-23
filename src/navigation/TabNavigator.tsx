@@ -43,7 +43,7 @@ export const TabNavigator = () => {
             borderTopColor: '#1e293b',
             paddingBottom: insets.bottom,
             paddingTop: 8,
-            zIndex: 5,
+            zIndex: 1,
             height: BOTTOM_TAB_HEIGHT + insets.bottom,
           },
           headerShown: false,

@@ -118,8 +118,8 @@ const RootNavigator = () => {
                 left: 0,
                 right: 0,
                 bottom: 0,
-                zIndex: 1000,
-                elevation: 1000,
+                zIndex: 5,
+                elevation: 5,
                 paddingBottom: insets.bottom,
               }}
               pointerEvents='auto'
