@@ -221,7 +221,7 @@ return (
       )}
 
       {/* MODAL METADATA */}
-      <BottomModal visible={isFormOpen} onDismiss={() => setIsFormOpen(false)}>
+      <BottomModal visible={isFormOpen} onClose={() => setIsFormOpen(false)} H={480}>
         <View className="px-5 pb-8 flex-1">
           <Text className="text-white font-black text-xl mb-4">{isEditMode ? 'Modify playlist' : 'Create a new playlist'}</Text>
           <View className="items-center mb-4">
@@ -246,7 +246,7 @@ return (
       </BottomModal>
 
       {/* MODAL SONG MANAGEMENT */}
-      <BottomModal visible={isTrackManagerOpen} onDismiss={() => { setIsTrackManagerOpen(false); refetch(); }}>
+      <BottomModal visible={isTrackManagerOpen} onClose={() => { setIsTrackManagerOpen(false); refetch(); }}>
         <View className="px-5 flex-1 pb-10">
           <Text className="text-white font-black text-lg mb-1">Add or remove songs</Text>
           <Text className="text-emerald-400 text-xs mb-3 font-semibold">Playlist: {activePlaylistForTracks?.name}</Text>

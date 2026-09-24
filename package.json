@@ -25,6 +25,7 @@
     "react": "19.2.3",
     "react-native": "0.87.1",
     "react-native-easing-gradient": "^1.1.1",
+    "react-native-edge-to-edge": "^1.8.2",
     "react-native-gesture-handler": "^3.2.1",
     "react-native-image-colors": "1.5.2",
     "react-native-image-picker": "^8.2.1",

@@ -1,43 +1,56 @@
-import {
-  View,
-  StyleSheet,
+// apps/soundfix/components/CustomBottomSheet.tsx
+import React, { useEffect, useRef } from 'react';
+import { 
+  View, 
+  StyleSheet, 
+  Modal, 
+  Animated, 
+  Dimensions, 
+  PanResponder, 
   TouchableWithoutFeedback,
-  Animated,
-  PanResponder,
+  StatusBar,
+  Platform,
+  NativeModules
 } from 'react-native';
-import { screenHeight } from '../utils/constants';
-import { useEffect, useRef } from 'react';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 interface CustomBottomSheetProps {
   visible: boolean;
-  onDismiss: () => void;
+  onClose: () => void;
   children: React.ReactNode;
+  H?: number; // Optional height (default full screen)
 }
-const MODAL_HEIGHT = screenHeight * 0.74;
 
-export const BottomModal = ({ visible, onDismiss, children }: CustomBottomSheetProps) => {
-    const translateY = useRef(new Animated.Value(MODAL_HEIGHT)).current;
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-   const openAnim = Animated.parallel([
+export const BottomModal = ({ visible, onClose, children, H }: CustomBottomSheetProps) => {
+  const insets = useSafeAreaInsets();
+  
+  const MODAL_HEIGHT = H || SCREEN_HEIGHT;
+  
+  const translateY = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
+  const opacity = useRef(new Animated.Value(0)).current;
+
+  const openAnim = Animated.parallel([
     Animated.timing(translateY, {
       toValue: 0,
-      duration: 250,
+      duration: 260,
       useNativeDriver: true,
     }),
-    Animated.timing(fadeAnim, {
-      toValue: 0.6, // Maximum background darkening (rgba 0.6)
-      duration: 250,
+    Animated.timing(opacity, {
+      toValue: 1,
+      duration: 260,
       useNativeDriver: true,
     })
   ]);
 
   const closeAnim = Animated.parallel([
     Animated.timing(translateY, {
-      toValue: MODAL_HEIGHT,
+      toValue: SCREEN_HEIGHT,
       duration: 220,
       useNativeDriver: true,
     }),
-    Animated.timing(fadeAnim, {
+    Animated.timing(opacity, {
       toValue: 0,
       duration: 220,
       useNativeDriver: true,
@@ -47,27 +60,33 @@ export const BottomModal = ({ visible, onDismiss, children }: CustomBottomSheetP
   useEffect(() => {
     if (visible) {
       openAnim.start();
-    } else {
-      closeAnim.start();
-    }
-  }, [closeAnim, openAnim, visible]);
 
-  const handleDismiss = () => {
-    closeAnim.start(() => onDismiss());
+      if (Platform.OS === 'android') {
+        const UIManager = NativeModules.UIManager;
+        // Za pomocą natywnego wywołania usuwamy wymuszenie koloru tła (translucent overlay fix)
+        if (NativeModules.StatusBarManager && NativeModules.StatusBarManager.setColor) {
+          // Upewniamy się, że okno traktuje dolny pasek jako overlay (pod spodem)
+          NativeModules.StatusBarManager.setStyle('light-content');
+        }
+      }
+    }
+    
+  }, [openAnim, visible]);
+
+  const handleClose = () => {
+    closeAnim.start(() => onClose());
   };
+
 
   const panResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
-      onMoveShouldSetPanResponder: (_, gestureState) => Math.abs(gestureState.dy) > 5, 
-      onPanResponderMove: (_, gestureState) => {
-        if (gestureState.dy > 0) {
-          translateY.setValue(gestureState.dy);
-        }
-      },
+      onMoveShouldSetPanResponder: (_, gestureState) => Math.abs(gestureState.dy) > 10, 
+      onPanResponderMove: Animated.event([null, { dy: translateY }], { useNativeDriver: false }),
       onPanResponderRelease: (_, gestureState) => {
-        if (gestureState.dy > 120 || gestureState.vy > 0.5) {
-          closeAnim.start(() => onDismiss());
+        // If pulled down by more than 150px or at high vertical speed (vy)
+        if (gestureState.dy > 150 || gestureState.vy > 0.5) {
+          closeAnim.start(() => onClose());
         } else {
           openAnim.start();
         }
@@ -75,46 +94,73 @@ export const BottomModal = ({ visible, onDismiss, children }: CustomBottomSheetP
     })
   ).current;
 
-    if (!visible) return null;
-
   return (
-    <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
-      {/* FadeAnim controlled background fade */}
-      <TouchableWithoutFeedback onPress={handleDismiss}>
-        <Animated.View 
-          style={[StyleSheet.absoluteFill, { backgroundColor: 'black', opacity: fadeAnim }]} 
-        />
-      </TouchableWithoutFeedback>
+    <Modal
+      visible={visible}
+      transparent={true}
+      animationType="none"
+      onRequestClose={handleClose}
+      statusBarTranslucent={true}
+      navigationBarTranslucent={true}
+      presentationStyle="overFullScreen"
+    >
+  
+      <Animated.View style={[styles.overlay, { opacity }]}>
+        <TouchableWithoutFeedback onPress={handleClose}>
+          <View style={StyleSheet.absoluteFill} />
+        </TouchableWithoutFeedback>
+      </Animated.View>
 
-      {/* Modal container extended by transform: translateY */}
-      <Animated.View 
+      {/* Modal container extended by transform: translateY rigid from bottom: 0 */}
+      <Animated.View
         style={[
-          styles.container, 
-          { transform: [{ translateY }] }
-        ]} 
-        {...panResponder.panHandlers}
+          styles.container,
+          {
+            height: MODAL_HEIGHT,
+            transform: [{ translateY }],
+
+            paddingTop: H ? 12 : insets.top,
+            paddingBottom: insets.bottom > 0 ? insets.bottom : 16,
+          },
+        ]}
         className="bg-neutral-900 border-t border-neutral-800"
       >
+        {/* Separated area of ​​the stroke gesture bar */}
+        <View {...panResponder.panHandlers} style={styles.grabberArea}>
+          <View style={styles.grabber} />
+        </View>
 
-        <View className="w-12 h-1.5 bg-neutral-700 rounded-full my-3 self-center" />
-        
         <View style={{ flex: 1 }}>
           {children}
         </View>
       </Animated.View>
-    </View>
+    </Modal>
   );
 };
 
 const styles = StyleSheet.create({
+  overlay: {
+    ...StyleSheet.absoluteFill,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+  },
   container: {
-    height: MODAL_HEIGHT,
-    width: '100%',
     position: 'absolute',
     bottom: 0,
-    borderTopRightRadius: 24,
+    left: 0,
+    right: 0,
     borderTopLeftRadius: 24,
-    paddingBottom: 24,
+    borderTopRightRadius: 24,
     overflow: 'hidden',
+  },
+  grabberArea: {
+    paddingVertical: 14,
+    alignItems: 'center',
+    width: '100%',
+  },
+  grabber: {
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: '#333',
   },
 });
