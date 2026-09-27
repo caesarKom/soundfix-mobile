@@ -246,7 +246,7 @@ return (
       </BottomModal>
 
       {/* MODAL SONG MANAGEMENT */}
-      <BottomModal visible={isTrackManagerOpen} onClose={() => { setIsTrackManagerOpen(false); refetch(); }}>
+      <BottomModal H={650} visible={isTrackManagerOpen} onClose={() => { setIsTrackManagerOpen(false); refetch(); }}>
         <View className="px-5 flex-1 pb-10">
           <Text className="text-white font-black text-lg mb-1">Add or remove songs</Text>
           <Text className="text-emerald-400 text-xs mb-3 font-semibold">Playlist: {activePlaylistForTracks?.name}</Text>
