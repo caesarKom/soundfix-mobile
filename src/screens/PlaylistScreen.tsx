@@ -97,7 +97,7 @@ export const PlaylistScreen = ({route}: any ) => {
         <TouchableOpacity onPress={() => goBack()} className="p-1">
           <Icon name="chevron-back" size={28} color="white" />
         </TouchableOpacity>
-        <Text className="text-white font-bold ml-4 text-lg">Playlista</Text>
+        <Text className="text-white font-bold ml-4 text-lg">Playlist: {metadata?.name}</Text>
       </View>
 
       <FlatList

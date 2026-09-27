@@ -189,7 +189,7 @@ return (
             <View className="flex-row items-center justify-between p-3 mb-2 bg-neutral-900/40 rounded-xl border border-neutral-900">
               <TouchableOpacity
                 activeOpacity={0.7}
-                onPress={() => navigate('PlaylistScreen', { playlistId: item.id })}
+                onPress={() => navigate('Playlist', { playlistId: item.id })}
                 className="flex-row items-center flex-1 mr-2"
               >
                 <Image
