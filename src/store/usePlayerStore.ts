@@ -14,6 +14,7 @@ export interface Track {
   coverUrl?: string;
   mimeType?: string;
   isLiked?: boolean;
+  playCount?: number;
 }
 
 const getBaseStreamUrl = (trackId: string): string => {

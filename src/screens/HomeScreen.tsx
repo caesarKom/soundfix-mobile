@@ -1,10 +1,21 @@
-import { View, Text, TouchableOpacity, Image, ActivityIndicator, FlatList } from 'react-native';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  Image,
+  ActivityIndicator,
+  FlatList,
+} from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MEDIA_URL } from '../config/env';
 import { usePlayerStore } from '../store/usePlayerStore';
 import { Heart, noSongImg } from '../utils/images';
-import { usePlaylistsQuery, useInfiniteMusicQuery, useToggleFavoriteMutation } from '../hooks/useMusicQueries';
+import {
+  usePlaylistsQuery,
+  useInfiniteMusicQuery,
+  useToggleFavoriteMutation,
+} from '../hooks/useMusicQueries';
 import HeaderWithAvatarDrawer from '../components/HeaderWithAvatarDrawer';
 import { useEffect, useMemo } from 'react';
 import { navigate } from '../navigation/NavigationUtils';
@@ -12,17 +23,27 @@ import { RenderTrackItem } from '../components/RenderTrackItem';
 import DotLoading from '../components/DotLoading';
 
 export const HomeScreen = () => {
- const { playTrackById, setAllTracks, appendTracks, currentTrack } = usePlayerStore()
+  const { playTrackById, setAllTracks, appendTracks, currentTrack } =
+    usePlayerStore();
 
-  const { data, isLoading, isError, refetch, isRefetching, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteMusicQuery()
+  const {
+    data,
+    isLoading,
+    isError,
+    refetch,
+    isRefetching,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfiniteMusicQuery();
   const { data: playlistsData } = usePlaylistsQuery();
 
-   const allTracks = useMemo(() => {
+  const allTracks = useMemo(() => {
     if (!data || !data.pages) return [];
-    return data.pages.flatMap((page) => page) || [];
+    return data.pages.flatMap(page => page) || [];
   }, [data]);
 
-   useEffect(() => {
+  useEffect(() => {
     if (!data || !data.pages || data.pages.length === 0) return;
 
     const pageCount = data.pages.length;
@@ -37,7 +58,7 @@ export const HomeScreen = () => {
     }
   }, [data, setAllTracks, appendTracks]);
 
-  const { mutate: toggleFavorite } = useToggleFavoriteMutation() 
+  const { mutate: toggleFavorite } = useToggleFavoriteMutation();
 
   if (isLoading && allTracks.length === 0) {
     return (
@@ -52,53 +73,77 @@ export const HomeScreen = () => {
     return (
       <SafeAreaView className="flex-1 bg-neutral-950 items-center justify-center">
         <Text className="text-red-500 mb-4">Failed to load music</Text>
-        <TouchableOpacity onPress={() => refetch()} className="bg-neutral-800 px-4 py-2 rounded-lg">
+        <TouchableOpacity
+          onPress={() => refetch()}
+          className="bg-neutral-800 px-4 py-2 rounded-lg"
+        >
           <Text className="text-white">Try Again</Text>
         </TouchableOpacity>
       </SafeAreaView>
     );
   }
 
-  const ListHeader =  (
+  const ListHeader = (
     <View className="mt-4">
       <Text className="text-white text-xl font-bold mb-3">For You</Text>
-      <TouchableOpacity className="mr-4 w-36" activeOpacity={0.7} onPress={() => navigate('Favorite')}>
-                <Image
-                  source={{ uri: Heart }}
-                  className="w-36 h-36 rounded-md mb-2 bg-neutral-900"
-                  resizeMode="cover"
-                />
-                <Text className="text-white font-semibold text-sm" numberOfLines={1}>
-                  Favorite
-                </Text>
-                <Text className="text-neutral-400 text-xs" numberOfLines={1}>
-                  Your favorite playlist
-                </Text>
-              </TouchableOpacity>
-      
+      <TouchableOpacity
+        className="mr-4 w-36"
+        activeOpacity={0.7}
+        onPress={() => navigate('Favorite')}
+      >
+        <Image
+          source={{ uri: Heart }}
+          className="w-36 h-36 rounded-md mb-2 bg-neutral-900"
+          resizeMode="cover"
+        />
+        <Text className="text-white font-semibold text-sm" numberOfLines={1}>
+          Favorite
+        </Text>
+        <Text className="text-neutral-400 text-xs" numberOfLines={1}>
+          Your favorite playlist
+        </Text>
+      </TouchableOpacity>
+
       {/* Featured Playlists */}
       {Array.isArray(playlistsData) && playlistsData.length > 0 && (
         <View className="mb-6 mt-6">
-          <Text className="text-white text-xl font-bold mb-3">Featured Playlists</Text>
+          <Text className="text-white text-xl font-bold mb-3">
+            Featured Playlists
+          </Text>
           <FlatList
             horizontal
             showsHorizontalScrollIndicator={false}
             data={playlistsData}
-            keyExtractor={(item) => item.id}
+            keyExtractor={item => item.id}
             renderItem={({ item: playlist }) => (
-              <TouchableOpacity className="mr-4 w-36" activeOpacity={0.7} onPress={() => navigate('Playlist',{playlistId: playlist.id})}>
+              <TouchableOpacity
+                className="mr-4 w-36"
+                activeOpacity={0.7}
+                onPress={() =>
+                  navigate('Playlist', { playlistId: playlist.id })
+                }
+              >
                 <Image
                   source={{
-                    uri: playlist.coverUrl ? `${MEDIA_URL}/${playlist.coverUrl}` : noSongImg,
+                    uri: playlist.coverUrl
+                      ? `${MEDIA_URL}/${playlist.coverUrl}`
+                      : noSongImg,
                   }}
                   className="w-36 h-36 rounded-md mb-2 bg-neutral-900"
                   resizeMode="cover"
                 />
-                <Text className="text-white font-semibold text-sm" numberOfLines={1}>
+                <Text
+                  className="text-white font-semibold text-sm"
+                  numberOfLines={1}
+                >
                   {playlist.name}
                 </Text>
-                <Text className="text-neutral-400 text-xs" numberOfLines={1}>
+
+                <Text className="text-neutral-300 text-xs" numberOfLines={1}>
                   {playlist.description || 'Playlist'}
+                </Text>
+                <Text className="text-neutral-400 text-xs">
+                  {playlist._count.songs} songs
                 </Text>
               </TouchableOpacity>
             )}
@@ -108,12 +153,15 @@ export const HomeScreen = () => {
 
       {/* Trending Section */}
       <View className="mb-6">
-        <Text className="text-white text-xl font-bold mb-3">Trending Right Now</Text>
+        <Text className="text-white text-xl font-bold mb-3">
+          Trending Right Now
+        </Text>
         <FlatList
           horizontal
           showsHorizontalScrollIndicator={false}
-          data={Array.isArray(allTracks) ? allTracks.slice(0, 10) : []} // Limit do top 10 na ekranie głównym
-          keyExtractor={(item) => `trending-${item.id}`}
+          data={Array.isArray(allTracks) ? allTracks.filter(track => track.playCount! > 50).slice(0, 10) : []}
+
+          keyExtractor={item => `trending-${item.id}`}
           renderItem={({ item: track }) => (
             <TouchableOpacity
               onPress={() => playTrackById(track.id)}
@@ -123,7 +171,9 @@ export const HomeScreen = () => {
               <View className="relative">
                 <Image
                   source={{
-                    uri: track.coverUrl ? `${MEDIA_URL}/${track.coverUrl}` : noSongImg,
+                    uri: track.coverUrl
+                      ? `${MEDIA_URL}/${track.coverUrl}`
+                      : noSongImg,
                   }}
                   className="w-36 h-36 rounded-md mb-2 bg-neutral-900"
                   resizeMode="cover"
@@ -134,40 +184,56 @@ export const HomeScreen = () => {
                   </View>
                 )}
               </View>
-              <Text className="text-white font-semibold text-sm" numberOfLines={1}>
+              <Text
+                className="text-white font-semibold text-sm"
+                numberOfLines={1}
+              >
                 {track.title}
               </Text>
               <Text className="text-neutral-400 text-xs" numberOfLines={1}>
                 {track.artist}
+              </Text>
+              <Text className="text-neutral-400 text-xs" numberOfLines={1}>
+                {track.playCount} played
               </Text>
             </TouchableOpacity>
           )}
         />
       </View>
 
-       <View className="mb-6 mt-4 flex items-center justify-center">
-          <Text className="text-white text-xl font-bold mb-3">All Musics</Text>
-          </View>
+      <View className="mb-6 mt-4 flex items-center justify-center">
+        <Text className="text-white text-xl font-bold mb-3">All Musics</Text>
+      </View>
     </View>
   );
 
   return (
     <SafeAreaView className="flex-1 bg-neutral-900">
       <HeaderWithAvatarDrawer />
-      
+
       <FlatList
         data={Array.isArray(allTracks) ? allTracks : []}
-        renderItem={({item}) => <RenderTrackItem item={item} playTrackById={playTrackById} currentTrack={currentTrack} toggleFavorite={toggleFavorite} />}
-        keyExtractor={(item) => item.id}
-
-        contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 12, paddingBottom: 100 }}
+        renderItem={({ item }) => (
+          <RenderTrackItem
+            item={item}
+            playTrackById={playTrackById}
+            currentTrack={currentTrack}
+            toggleFavorite={toggleFavorite}
+          />
+        )}
+        keyExtractor={item => item.id}
+        contentContainerStyle={{
+          paddingHorizontal: 16,
+          paddingTop: 12,
+          paddingBottom: 100,
+        }}
         ListHeaderComponent={ListHeader}
         ListFooterComponent={
           isFetchingNextPage ? (
-        <View className="py-4 justify-center items-center">
-          <DotLoading />
-        </View>
-      ) : undefined
+            <View className="py-4 justify-center items-center">
+              <DotLoading />
+            </View>
+          ) : undefined
         }
         refreshing={isRefetching}
         onRefresh={refetch}
