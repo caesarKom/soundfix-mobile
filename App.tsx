@@ -1,6 +1,6 @@
 import './global.css';
 
-import { StatusBar, StatusBarProps } from 'react-native';
+import { StatusBar, StatusBarProps, useColorScheme } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { QueryClientProvider } from '@tanstack/react-query';
 import RootNavigator from './src/navigation/RootNavigator';
@@ -9,9 +9,11 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import Toast from 'react-native-toast-message';
 import { useEffect, useState } from 'react';
 import TrackPlayer from '@rntp/player';
+import { Colors } from './src/utils/constants';
 
 export default function App() {
   const [isReady, setIsReady] = useState(false);
+  const isDarkMode = useColorScheme() === 'light';
 
 useEffect(() => {
     try {
@@ -44,8 +46,8 @@ useEffect(() => {
   return (
     <SafeAreaProvider>
         <StatusBar
-          barStyle="light-content"
-          {...({ backgroundColor: '#0f172a' } as StatusBarProps)}
+          barStyle={isDarkMode ? 'light-content' : 'dark-content'}
+          {...({ backgroundColor: Colors.background } as StatusBarProps)}
         />
       <QueryClientProvider client={queryClient}>
         <GestureHandlerRootView style={{ flex: 1 }}>
