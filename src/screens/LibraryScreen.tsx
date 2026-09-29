@@ -18,6 +18,7 @@ import {
   useRemoveSongFromPlaylistMutation,
   PlaylistData
 } from '../hooks/usePlaylistsQueries';
+import { Avatar } from '../components/Avatar';
 
 interface SelectedImage {
   uri: string;
@@ -152,9 +153,9 @@ return (
       <View className="flex-row items-center justify-between mb-4">
         <View className="flex-row items-center gap-3">
           <View className="w-8 h-8 rounded-full bg-emerald-500 items-center justify-center">
-            <Text className="text-slate-950 font-black text-sm">Y</Text>
+            <Avatar size={30} />
           </View>
-          <Text className="text-white font-black text-2xl tracking-tight">Twoja biblioteka</Text>
+          <Text className="text-white font-black text-2xl tracking-tight">Your Library</Text>
         </View>
         <TouchableOpacity onPress={openCreateModal} className="p-1">
           <Icon name="add" size={30} color="white" />
@@ -165,7 +166,7 @@ return (
       <View className="flex-row items-center bg-neutral-900 rounded-lg px-3 py-2 mb-4 border border-neutral-800/40">
         <Icon name="search" size={18} color="#a3a3a3" />
         <TextInput
-          placeholder="Szukaj playlist..."
+          placeholder="Search playlists..."
           placeholderTextColor="#6b7280"
           value={searchQuery}
           onChangeText={setSearchQuery}
