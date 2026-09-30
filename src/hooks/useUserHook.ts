@@ -15,13 +15,11 @@ export const useUpdateProfile = () => {
       return response.data;
     },
     onSuccess: (updatedUser) => {
-      // 1. Zastąp dane w podglądzie React Query
+
       queryClient.setQueryData(USER_QUERY_KEY, updatedUser);
 
-      // 2. Zaktualizuj stan w Zustand (aby Avatar w Drawerze/Headerze się natychmiast odświeżył)
       setUser(updatedUser);
 
-      // 3. Unieważnij zapytania powiązane
       queryClient.invalidateQueries({ queryKey: USER_QUERY_KEY });
     },
   });

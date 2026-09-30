@@ -5,6 +5,7 @@ import { LoginDto, LoginResponse, RegisterDto, VerifyOtpDto } from '../types/aut
 
 export const useMe = () => {
     const setUser = useAuthStore((state) => state.setUser);
+    const accessToken = useAuthStore((state) => state.accessToken);
 
     return useQuery({
         queryKey: ['me'],
@@ -13,7 +14,7 @@ export const useMe = () => {
             setUser(data);
             return data;
         },
-        //enabled: !!accessToken, // Only fetch if user is authenticated
+        enabled: !!accessToken, // Only fetch if user is authenticated
         retry: false,
         staleTime: 1000 * 60 * 5,
     });

@@ -16,32 +16,26 @@ export default function App() {
   const isDarkMode = useColorScheme() === 'light';
 
 useEffect(() => {
-    try {
-      TrackPlayer.setupPlayer({
-        contentType: 'music',
-       // handleAudioBecomingNoisy: true,
-        cache: {},
-        // progressSync: {
-        //   intervalSeconds: 5,
-        //   http: {
-        //     url: 'http://localhost:3333/progress',
-        //   },
-        // },
-        android: {
-          wakeMode: 'network',
-          // skipSilenceEnabled: false,
-          // cast: DEFAULT_CAST_RECEIVER_APP_ID,
-        },
-      });
-      setIsReady(true);
-    } catch (error) {
-      if ((error as Error).message?.includes('already set up')) {
+    async function startPlayer() {
+      try {
+         TrackPlayer.setupPlayer({
+          contentType: 'music',
+          cache: {},
+          android: { wakeMode: 'network' },
+        });
         setIsReady(true);
-      } else {
-        console.error('Failed to setup player:', error);
+      } catch (error) {
+        if ((error as Error).message?.includes('already set up')) {
+          setIsReady(true);
+        } else {
+          console.error('Failed to setup player:', error);
+        }
       }
     }
+    startPlayer();
   }, []);
+
+  if (!isReady) return null;
 
   return (
     <SafeAreaProvider>

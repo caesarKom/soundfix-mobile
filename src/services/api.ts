@@ -34,6 +34,14 @@ api.interceptors.response.use(
     const originalRequest = error.config;
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
+
+      // If there is no token, do not refresh. Log out and abort.
+      const storedRefreshToken = useAuthStore.getState().refreshToken;
+      if (!storedRefreshToken) {
+        useAuthStore.getState().logout();
+        return Promise.reject(error);
+      }
+
       if (isRefreshing) {
         return new Promise((res, rej) => failedQueue.push({ resolve: res, reject: rej }))
           .then((token) => {
@@ -43,8 +51,8 @@ api.interceptors.response.use(
       }
       isRefreshing = true;
       try {
-        const { refreshToken } = useAuthStore.getState();
-        const { data } = await refreshClient.post("/auth/refresh", { refreshToken });
+
+        const { data } = await refreshClient.post("/auth/refresh", { refreshToken: storedRefreshToken });
 
         useAuthStore.getState().setTokens(data.accessToken, data.refreshToken);
         processQueue(null, data.accessToken);

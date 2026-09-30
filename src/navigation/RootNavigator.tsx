@@ -16,6 +16,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { GlobalPlayer } from '../components/Player/GlobalPlayer';
 import { PlaylistScreen } from '../screens/PlaylistScreen';
 import FavoriteScreen from '../screens/FavoriteScreen';
+import { Colors } from '../utils/constants';
 
 
 const Stack = createNativeStackNavigator();
@@ -52,7 +53,7 @@ const MainStack = () => {
       screenOptions={{
         headerShown: false,
         animation: 'fade',
-        contentStyle: {backgroundColor: ''}
+        contentStyle: {backgroundColor: Colors.background}
       }}
       initialRouteName="App"
       >
@@ -100,7 +101,7 @@ const RootNavigator = () => {
     return () => clearTimeout(timer);
   }, []);
 
-  if (isInitializing && isMeLoading) {
+  if (isInitializing || isMeLoading) {
     return <SplashScreen onFinish={() => setIsInitializing(false)} />;
   }
 
@@ -120,7 +121,7 @@ const RootNavigator = () => {
                 bottom: 0,
                 zIndex: 1000,
                 elevation: 1000,
-                paddingBottom: insets.bottom,
+                paddingBottom: 16,
               }}
               pointerEvents='auto'
               >
