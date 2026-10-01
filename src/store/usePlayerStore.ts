@@ -67,7 +67,10 @@ export const usePlayerStore = create<PlayerState>()(
           });
           const mediaToken = response.data.token;
           const baseUrl = api.defaults.baseURL || '';
-          return `${baseUrl}/music/stream/${trackId}?token=${mediaToken}`;
+
+          const expiresAt = Date.now() + 1000 * 60 * 60;
+
+          return `${baseUrl}/music/stream/${trackId}?token=${mediaToken}&expiresAt=${expiresAt}`;
         } catch (error) {
           console.error(
             `Failed to retrieve secure token for track ${trackId}:`,
@@ -96,7 +99,7 @@ export const usePlayerStore = create<PlayerState>()(
             const signedUrl = await getSecuredUrl(nextTrack.id);
             const mediaItem = convertTrackToCleanMedia(nextTrack);
             mediaItem.url = signedUrl;
-            
+
             TrackPlayer.replaceMediaItem(nextIndex, mediaItem);
             //console.log(`[Player] Prefetched token for next track: ${nextTrack.title}`);
           } catch (err) {
@@ -109,9 +112,9 @@ export const usePlayerStore = create<PlayerState>()(
         if (!tracks || tracks.length === 0) return;
         set({ allTracks: tracks });
         TrackPlayer.clear();
-        
+
         const mediaItems = tracks.map(track => convertTrackToCleanMedia(track));
-        
+
         try {
           const firstTrackToken = await get().getSecuredUrl(tracks[0].id);
           mediaItems[0].url = firstTrackToken;
@@ -120,20 +123,19 @@ export const usePlayerStore = create<PlayerState>()(
         }
 
         TrackPlayer.setMediaItems(mediaItems);
-          set({ currentTrack: tracks[0] });
-          // Prefetch for the second song on the list
-          await get().prepareNextTrackToken(0);
-        
+        set({ currentTrack: tracks[0] });
+        // Prefetch for the second song on the list
+        await get().prepareNextTrackToken(0);
       },
 
       appendTracks: async (newTracks: Track[]) => {
         const { allTracks } = get();
-        
+
         // Filter songs to make sure we don't add duplicates to the state
         const uniqueNewTracks = newTracks.filter(
-          nt => !allTracks.some(at => at.id === nt.id)
+          nt => !allTracks.some(at => at.id === nt.id),
         );
-        
+
         if (uniqueNewTracks.length === 0) return;
 
         // Connect boards in Zustand
@@ -141,12 +143,16 @@ export const usePlayerStore = create<PlayerState>()(
         set({ allTracks: updatedTracks });
 
         // Convert and without clearing the queue (without .clear()) append to the end of the native player
-        const newMediaItems = uniqueNewTracks.map(track => convertTrackToCleanMedia(track));
+        const newMediaItems = uniqueNewTracks.map(track =>
+          convertTrackToCleanMedia(track),
+        );
         TrackPlayer.addMediaItems(newMediaItems);
-        console.log(`[Player] Dynamically appended ${uniqueNewTracks.length} tracks to native queue.`);
+        console.log(
+          `[Player] Dynamically appended ${uniqueNewTracks.length} tracks to native queue.`,
+        );
       },
 
-       playTrackById: async (trackId: string) => {
+      playTrackById: async (trackId: string) => {
         const { allTracks, getSecuredUrl, prepareNextTrackToken } = get();
         const trackIndex = allTracks.findIndex(t => t.id === trackId);
         if (trackIndex < 0) return;
@@ -158,31 +164,49 @@ export const usePlayerStore = create<PlayerState>()(
           const updatedItem = convertTrackToCleanMedia(track);
           updatedItem.url = signedUrl;
 
-     
           TrackPlayer.replaceMediaItem(trackIndex, updatedItem);
           TrackPlayer.skipToIndex(trackIndex);
-          
+
           set({ currentTrack: track });
           TrackPlayer.play();
 
-    
           await prepareNextTrackToken(trackIndex);
         } catch (error) {
           console.error(`Failed to start track ${trackId}:`, error);
         }
       },
 
-       play: async () => {
-        const { currentTrack, getSecuredUrl, allTracks, prepareNextTrackToken } = get();
+      play: async () => {
+        const {
+          currentTrack,
+          getSecuredUrl,
+          allTracks,
+          prepareNextTrackToken,
+        } = get();
         if (!currentTrack) return;
-          
+
         const currentIndex = allTracks.findIndex(t => t.id === currentTrack.id);
         if (currentIndex < 0) return;
 
         const activeIndex = TrackPlayer.getActiveMediaItemIndex();
         if (activeIndex === currentIndex) {
-          TrackPlayer.play()
-          return
+          const nativeQueue = TrackPlayer.getQueue();
+          const activeNativeItem = nativeQueue[activeIndex];
+          const currentUrl =
+            activeNativeItem && typeof activeNativeItem.url === 'string'
+              ? activeNativeItem.url
+              : '';
+          // Extract the expiration timestamp from the URL.
+          const match = currentUrl.match(/expiresAt=(\d+)/);
+          const expiresAt = match ? parseInt(match[1], 10) : 0;
+
+          // IF THE TOKEN IS STILL VALID (with a 2-minute buffer for stable caching)
+          if (Date.now() < expiresAt - 1000 * 60 * 2) {
+            TrackPlayer.play();
+            return;
+          }
+
+          // If the token is expired, fetch a new token and update the track URL.
         }
 
         try {
@@ -204,7 +228,7 @@ export const usePlayerStore = create<PlayerState>()(
         TrackPlayer.pause();
       },
 
-     skipToNext: async () => {
+      skipToNext: async () => {
         const { allTracks, getSecuredUrl, prepareNextTrackToken } = get();
         const currentIndex = TrackPlayer.getActiveMediaItemIndex();
 
@@ -223,7 +247,6 @@ export const usePlayerStore = create<PlayerState>()(
             TrackPlayer.skipToIndex(nextIndex);
             TrackPlayer.play();
 
-    
             await prepareNextTrackToken(nextIndex);
           } catch (error) {
             console.error('Error shifting to next track:', error);
@@ -263,13 +286,23 @@ export const usePlayerStore = create<PlayerState>()(
         if (activeIndex !== null && allTracks[activeIndex]) {
           const nextTrack = allTracks[activeIndex];
           set({ currentTrack: nextTrack });
-          
+
           // Fuse: If the system jumped itself and the track does not yet have a token assigned in the URL
           const nativeQueue = TrackPlayer.getQueue();
           const activeNativeItem = nativeQueue[activeIndex];
-          const currentUrl = activeNativeItem && typeof activeNativeItem.url === 'string' ? activeNativeItem.url : '';
-          
-          if (!currentUrl || !currentUrl.includes('token=')) {
+          const currentUrl =
+            activeNativeItem && typeof activeNativeItem.url === 'string'
+              ? activeNativeItem.url
+              : '';
+          const match = currentUrl.match(/expiresAt=(\d+)/);
+          const expiresAt = match ? parseInt(match[1], 10) : 0;
+
+          // Refresh if the token is missing OR if the token has expired (or will expire in less than 2 minutes).
+          if (
+            !currentUrl ||
+            !currentUrl.includes('token=') ||
+            Date.now() > expiresAt - 1000 * 60 * 2
+          ) {
             try {
               const signedUrl = await getSecuredUrl(nextTrack.id);
               const mediaItem = convertTrackToCleanMedia(nextTrack);
@@ -279,7 +312,7 @@ export const usePlayerStore = create<PlayerState>()(
               console.error('[Player Sync] Dynamic emergency sign failed', e);
             }
           }
-          
+
           // Preparing a token for the next song (X+1)
           await prepareNextTrackToken(activeIndex);
         }
