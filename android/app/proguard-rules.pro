@@ -8,3 +8,19 @@
 #   http://developer.android.com/guide/developing/tools/proguard.html
 
 # Add any project specific keep options here:
+
+# Security for react-native-mmkv
+-keep class com.mrousavy.mmkv.** { *; }
+-keep class com.tencent.mmkv.** { *; }
+
+# Security for Nitro Modules and react-native-video
+-keep class com.margelo.nitro.** { *; }
+-keep class com.twg.video.** { *; }
+
+# Preservation of annotations necessary for the correct operation of the JNI bridge
+-keepattributes *Annotation*,Signature,InnerClasses,EnclosingMethod
+
+# Protection for Zustand and the Hermes engine
+-keepclassmembers class * {
+    @com.facebook.react.bridge.ReactMethod *;
+}

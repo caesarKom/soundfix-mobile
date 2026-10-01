@@ -35,7 +35,7 @@ const AppDrawerNavigator = () => {
         drawerPosition: 'left',
         drawerType: 'front',
         drawerStyle: {
-          backgroundColor: '#0f172a', // slate-900
+          backgroundColor: Colors.background,
           width: 300,
         },
       }}
@@ -55,7 +55,6 @@ const MainStack = () => {
         animation: 'fade',
         contentStyle: {backgroundColor: Colors.background}
       }}
-      initialRouteName="App"
       >
         {accessToken ? (
           <>
@@ -121,7 +120,7 @@ const RootNavigator = () => {
                 bottom: 0,
                 zIndex: 1000,
                 elevation: 1000,
-                paddingBottom: 16,
+                paddingBottom: insets.bottom,
               }}
               pointerEvents='auto'
               >

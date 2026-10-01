@@ -11,6 +11,7 @@ export const fontR = (fontSize: number) => {
 };
 
 export const darkColor = (hex: string, amount = 100) => {
+   /* eslint-disable no-bitwise */
   let color = hex?.replace('#', '');
   if (color?.length === 3) {
     color = color
