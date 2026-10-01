@@ -4,6 +4,7 @@ import { AuthStackParamList } from './types';
 import { LoginScreen } from '../screens/auth/LoginScreen';
 import { RegisterScreen } from '../screens/auth/RegisterScreen';
 import { VerifyOtpScreen } from '../screens/auth/VerifyOtpScreen';
+import { Colors } from '../utils/constants';
 
 const Stack = createNativeStackNavigator<AuthStackParamList>();
 
@@ -12,7 +13,7 @@ export const AuthNavigator = () => {
     <Stack.Navigator
       screenOptions={{
         headerShown: false,
-        contentStyle: { backgroundColor: '#020617' }, // slate-950
+        contentStyle: { backgroundColor: Colors.background },
       }}
     >
       <Stack.Screen name="Login" component={LoginScreen} />
