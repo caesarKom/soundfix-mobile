@@ -62,7 +62,7 @@ export const CustomDrawerContent: React.FC<DrawerContentComponentProps> = (props
       </DrawerContentScrollView>
 
       {/* Bottom section - Logout */}
-      <View className="p-4 border-t border-slate-800 mb-6">
+      <View className="p-4 border-t border-slate-800 mb-10">
         <TouchableOpacity
           onPress={logout}
           className="flex-row items-center px-4 py-3 rounded-lg bg-slate-800/50"
